@@ -6,6 +6,12 @@ pipeline {
         }
     }
     stages {
+        stage('Prepare') {
+            steps {
+                sh 'echo Preparing workspace...'
+                cleanWs()
+            }
+        }
         stage('Build') {
             steps {
                 sh 'mvn -B -DskipTests clean package'
@@ -19,12 +25,27 @@ pipeline {
                 always {
                     junit 'target/surefire-reports/*.xml'
                 }
+                success {
+                    echo 'Tests passed successfully!'
+                }
+                failure {
+                    echo 'Tests failed. Please check the test reports.'
+                }
+                unstable {
+                    echo 'Some tests failed but the build is not marked as failed.'
+                }
             }
         }
         stage('Deliver') {
             steps {
                 sh './jenkins/scripts/deliver.sh'
             }
+        }
+    }
+    post {
+        always {
+            echo 'Cleaning up workspace...'
+            cleanWs()
         }
     }
 }
