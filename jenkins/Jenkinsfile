@@ -3,8 +3,8 @@ pipeline {
 
     environment {
         MAVEN_VERSION = '3.9.8'
-        MAVEN_HOME = "${env.HOME}/apache-maven-${env.MAVEN_VERSION}"
-        PATH = "${env.MAVEN_HOME}/bin:${env.PATH}"
+        MAVEN_HOME = "${env.HOME}/apache-maven-${MAVEN_VERSION}"
+        PATH = "${MAVEN_HOME}/bin:${env.PATH}"
     }
 
     stages {
@@ -14,9 +14,14 @@ pipeline {
                     // Maven 3.9.8 설치
                     sh '''
                     if [ ! -d "${MAVEN_HOME}" ]; then
+                        echo "Downloading Maven..."
                         curl -sL https://archive.apache.org/dist/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz -o /tmp/apache-maven-3.9.8-bin.tar.gz
+                        echo "Extracting Maven..."
                         tar xzvf /tmp/apache-maven-3.9.8-bin.tar.gz -C ${HOME}
+                    else
+                        echo "Maven already installed at ${MAVEN_HOME}"
                     fi
+                    ls -la ${MAVEN_HOME}
                     '''
                 }
             }
