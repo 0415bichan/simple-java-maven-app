@@ -1,51 +1,56 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.8'
-            args '-v /root/.m2:/root/.m2'
-        }
+    agent any
+
+    environment {
+        MAVEN_VERSION = '3.9.8'
+        MAVEN_HOME = "${env.HOME}/apache-maven-${env.MAVEN_VERSION}"
+        PATH = "${env.MAVEN_HOME}/bin:${env.PATH}"
     }
+
     stages {
-        stage('Prepare') {
+        stage('Setup') {
             steps {
-                sh 'echo Preparing workspace...'
-                cleanWs()
+                script {
+                    // Maven 3.9.8 설치
+                    sh '''
+                    if [ ! -d "${MAVEN_HOME}" ]; then
+                        curl -sL https://archive.apache.org/dist/maven/maven-3/3.9.8/binaries/apache-maven-3.9.8-bin.tar.gz -o /tmp/apache-maven-3.9.8-bin.tar.gz
+                        tar xzvf /tmp/apache-maven-3.9.8-bin.tar.gz -C ${HOME}
+                    fi
+                    '''
+                }
             }
         }
         stage('Build') {
             steps {
+                echo 'Building...'
                 sh 'mvn -B -DskipTests clean package'
             }
         }
         stage('Test') {
             steps {
+                echo 'Testing...'
                 sh 'mvn test'
             }
             post {
                 always {
                     junit 'target/surefire-reports/*.xml'
                 }
-                success {
-                    echo 'Tests passed successfully!'
-                }
-                failure {
-                    echo 'Tests failed. Please check the test reports.'
-                }
-                unstable {
-                    echo 'Some tests failed but the build is not marked as failed.'
-                }
             }
         }
         stage('Deliver') {
             steps {
+                echo 'Delivering...'
                 sh './jenkins/scripts/deliver.sh'
             }
         }
     }
     post {
-        always {
-            echo 'Cleaning up workspace...'
-            cleanWs()
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }
